@@ -25,7 +25,7 @@ The following files are included in submission:
 Project directory follows this structure:
 
 ```
-/project-root
+/notification-management
 ├── docker-compose.yml              # Docker Compose file
 ├── Dockerfile                      # Dockerfile for the service
 ├── package.json                    # Dependencies
