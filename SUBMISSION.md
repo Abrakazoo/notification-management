@@ -22,7 +22,7 @@ The following files are included in submission:
 
 ## **2. Project Structure**
 
-Project directory should follows this structure:
+Project directory follows this structure:
 
 ```
 /project-root
