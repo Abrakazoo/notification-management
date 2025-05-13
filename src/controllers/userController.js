@@ -1,34 +1,16 @@
-const axios = require('axios');
-const users = require('../models/userModel');
+const userService = require('../services/userService');
+const notificationService = require('../services/notificationService');
 
 exports.sendNotification = async (req, res) => {
   const { userId, message } = req.body;
-  const user = users.find(u => u.userId === userId);
-
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
-  }
-
-  const { preferences, email, telephone } = user;
-  const responses = [];
 
   try {
-    if (preferences.email) {
-      const emailResponse = await axios.post('http://localhost:5001/send-email', {
-        email,
-        message,
-      });
-      responses.push({ channel: 'email', response: emailResponse.data });
+    const user = userService.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    if (preferences.sms) {
-      const smsResponse = await axios.post('http://localhost:5001/send-sms', {
-        telephone,
-        message,
-      });
-      responses.push({ channel: 'sms', response: smsResponse.data });
-    }
-
+    const responses = await notificationService.sendNotifications(user, message);
     res.status(200).json({ status: 'sent', responses });
   } catch (error) {
     console.error('Error sending notification:', error.message);
@@ -38,30 +20,28 @@ exports.sendNotification = async (req, res) => {
 
 exports.editPreferences = (req, res) => {
   const { email, preferences } = req.body;
-  const user = users.find(u => u.email === email);
 
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
+  try {
+    const updatedUser = userService.updatePreferences(email, preferences);
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.status(200).json({ message: 'Preferences updated', user: updatedUser });
+  } catch (error) {
+    console.error('Error updating preferences:', error.message);
+    res.status(500).json({ error: 'Failed to update preferences', details: error.message });
   }
-
-  user.preferences = preferences;
-  res.status(200).json({ message: 'Preferences updated', user });
 };
 
 exports.createPreferences = (req, res) => {
   const { email, telephone, preferences } = req.body;
 
-  if (users.find(u => u.email === email)) {
-    return res.status(400).json({ error: 'User already exists' });
+  try {
+    const newUser = userService.createUser(email, telephone, preferences);
+    res.status(201).json({ message: 'User created', newUser });
+  } catch (error) {
+    console.error('Error creating user:', error.message);
+    res.status(400).json({ error: error.message });
   }
-
-  const newUser = {
-    userId: users.length + 1,
-    email,
-    telephone,
-    preferences
-  };
-
-  users.push(newUser);
-  res.status(201).json({ message: 'User created', newUser });
 };
